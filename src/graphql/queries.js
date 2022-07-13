@@ -1,30 +1,34 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const getNote = /* GraphQL */ `
-  query GetNote($id: ID!) {
-    getNote(id: $id) {
+export const getEntry = /* GraphQL */ `
+  query GetEntry($id: ID!) {
+    getEntry(id: $id) {
       id
-      name
-      description
-      image
+      productId
+      productSource
+      productCategory
+      productUrl
+      lastFetchedDate
       createdAt
       updatedAt
     }
   }
 `;
-export const listNotes = /* GraphQL */ `
-  query ListNotes(
-    $filter: ModelNoteFilterInput
+export const listEntries = /* GraphQL */ `
+  query ListEntries(
+    $filter: ModelEntryFilterInput
     $limit: Int
     $nextToken: String
   ) {
-    listNotes(filter: $filter, limit: $limit, nextToken: $nextToken) {
+    listEntries(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
         id
-        name
-        description
-        image
+        productId
+        productSource
+        productCategory
+        productUrl
+        lastFetchedDate
         createdAt
         updatedAt
       }

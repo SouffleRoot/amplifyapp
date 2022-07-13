@@ -2,85 +2,67 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { API, Storage } from 'aws-amplify';
 import { withAuthenticator, AmplifySignOut } from '@aws-amplify/ui-react-v1';
-import { listNotes } from './graphql/queries';
-import { createNote as createNoteMutation, deleteNote as deleteNoteMutation } from './graphql/mutations';
+import { listEntries } from './graphql/queries';
+import { createEntry as createEntryMutation, deleteEntry as deleteEntryMutation } from './graphql/mutations';
 
-const initialFormState = { name: '', description: '' }
+const initialFormState = { productId: '', productSource: '', productCategory: '', productUrl: '', lastFetchedDate: '' }
 
 function App() {
   const [notes, setNotes] = useState([]);
   const [formData, setFormData] = useState(initialFormState);
+  const amazonReviewPagePrefix = "https://www.amazon.com/PERLECARE-Adjustable-Weight-Bench-Workout/product-reviews/";
+  const amazonReviewPageSuffix = "/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews";
 
   useEffect(() => {
-    fetchNotes();
+    fetchEntries();
   }, []);
 
-  async function fetchNotes() {
-	const apiData = await API.graphql({ query: listNotes });
-	const notesFromAPI = apiData.data.listNotes.items;
-	await Promise.all(notesFromAPI.map(async note => {
-	  if (note.image) {
-		const image = await Storage.get(note.image);
-		note.image = image;
-	  }
-	  return note;
-	}))
-	setNotes(apiData.data.listNotes.items);
+  async function fetchEntries() {
+	const apiData = await API.graphql({ query: listEntries });
+	setNotes(apiData.data.listEntries.items);
   }
 
-  async function createNote() {
-	if (!formData.name || !formData.description) return;
-	await API.graphql({ query: createNoteMutation, variables: { input: formData } });
-	if (formData.image) {
-	  const image = await Storage.get(formData.image);
-	  formData.image = image;
-	}
+  async function createEntry() {
+	if (!formData.productId || !formData.productSource || !formData.productCategory) return;
+	formData.productUrl = amazonReviewPagePrefix + formData.productId + amazonReviewPageSuffix;
+	await API.graphql({ query: createEntryMutation, variables: { input: formData } });
 	setNotes([ ...notes, formData ]);
 	setFormData(initialFormState);
   }
 
-  async function deleteNote({ id }) {
+  async function deleteEntry({ id }) {
     const newNotesArray = notes.filter(note => note.id !== id);
     setNotes(newNotesArray);
-    await API.graphql({ query: deleteNoteMutation, variables: { input: { id } }});
-  }
-
-  async function onChange(e) {
-	if (!e.target.files[0]) return
-	const file = e.target.files[0];
-	setFormData({ ...formData, image: file.name });
-	await Storage.put(file.name, file);
-	fetchNotes();
+    await API.graphql({ query: deleteEntryMutation, variables: { input: { id } }});
   }
 
   return (
     <div className="App">
-      <h1>My Notes App</h1>
+      <h1>TargetTap Internal Portal</h1>
       <input
-        onChange={e => setFormData({ ...formData, 'name': e.target.value})}
-        placeholder="Note name"
-        value={formData.name}
+        onChange={e => setFormData({ ...formData, 'productId': e.target.value})}
+        placeholder="ProductId"
+        value={formData.productId}
       />
       <input
-        onChange={e => setFormData({ ...formData, 'description': e.target.value})}
-        placeholder="Note description"
-        value={formData.description}
+        onChange={e => setFormData({ ...formData, 'productCategory': e.target.value})}
+        placeholder="ProductCategory"
+        value={formData.productCategory}
       />
 	  <input
-  		type="file"
-  		onChange={onChange}
+  		onChange={e => setFormData({ ...formData, 'productSource': e.target.value})}
+		  placeholder="ProductSource"
+		  value={formData.productSource}
 	  />
-      <button onClick={createNote}>Create Note</button>
+      <button onClick={createEntry}>Submit</button>
       <div style={{marginBottom: 30}}>
 	  {
 		notes.map(note => (
-			<div key={note.id || note.name}>
-			<h2>{note.name}</h2>
-			<p>{note.description}</p>
-			<button onClick={() => deleteNote(note)}>Delete note</button>
-			{
-				note.image && <img src={note.image} style={{width: 400}} />
-			}
+			<div key={note.id || note.productId}>
+			<h2>{note.productId}</h2>
+			<p>{note.productCategory}</p>
+			<p>{note.productUrl}</p>
+			<button onClick={() => deleteEntry(note)}>Delete Entry</button>
 			</div>
 		))
 		}
